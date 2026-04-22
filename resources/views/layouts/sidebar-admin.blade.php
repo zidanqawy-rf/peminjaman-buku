@@ -42,7 +42,7 @@
             Kelola User
         </a>
 
-        <a href="#"
+        <a href="{{ route('admin.bukus.index') }}"
            style="{{ $linkInactive }}"
            onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.85)'"
            onmouseout="this.style.background='transparent';this.style.color='rgba(255,255,255,.5)'">
@@ -54,7 +54,7 @@
             Kelola Buku
         </a>
 
-        <a href="#"
+        <a href="{{ route('admin.kategoris.index') }}"
            style="{{ $linkInactive }}"
            onmouseover="this.style.background='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.85)'"
            onmouseout="this.style.background='transparent';this.style.color='rgba(255,255,255,.5)'">

@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\BukuController;
+use App\Http\Controllers\Admin\KategoriController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -28,6 +30,11 @@ Route::middleware(['auth', 'admin'])
         })->name('dashboard');
 
         Route::resource('users', UserController::class);
+
+        Route::resource('bukus', BukuController::class)->except(['show', 'create', 'edit']);
+        Route::post('bukus/import', [BukuController::class, 'import'])->name('bukus.import');
+
+        Route::resource('kategoris', KategoriController::class)->except(['show', 'create', 'edit']);
     });
 
 require __DIR__.'/auth.php';
