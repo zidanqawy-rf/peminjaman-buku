@@ -1,52 +1,162 @@
+{{-- resources/views/auth/register.blade.php --}}
+
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
-        @csrf
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f1f5f9; font-family: 'Figtree', sans-serif; }
 
-        <!-- Name -->
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+    .auth-wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2.5rem 1rem;
+        background: #f1f5f9;
+    }
+    .auth-card {
+        width: 100%;
+        max-width: 480px;
+        background: white;
+        border-radius: 1.25rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,.1);
+        padding: 2.5rem;
+    }
+    .auth-logo {
+        text-align: center;
+        margin-bottom: .75rem;
+    }
+    .auth-logo .icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.5rem; height: 3.5rem;
+        background: linear-gradient(135deg, #16a34a, #14532d);
+        border-radius: 1rem;
+        font-size: 1.6rem;
+        margin-bottom: .75rem;
+    }
+    .auth-title {
+        text-align: center;
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #14532d;
+        margin-bottom: .25rem;
+    }
+    .auth-sub {
+        text-align: center;
+        color: #64748b;
+        font-size: .9rem;
+        margin-bottom: 1.75rem;
+    }
+    .error-box {
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        color: #b91c1c;
+        padding: .75rem 1rem;
+        border-radius: .75rem;
+        margin-bottom: 1.25rem;
+        font-size: .85rem;
+    }
+    .form-group { margin-bottom: 1.1rem; }
+    .form-label {
+        display: block;
+        font-size: .85rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: .45rem;
+    }
+    .form-input {
+        width: 100%;
+        border: 1.5px solid #d1d5db;
+        border-radius: .75rem;
+        padding: .75rem 1rem;
+        font-size: .95rem;
+        color: #111827;
+        outline: none;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .form-input:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,.15);
+    }
+    .btn-submit {
+        width: 100%;
+        padding: .85rem;
+        background: linear-gradient(135deg, #16a34a, #14532d);
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        border: none;
+        border-radius: .75rem;
+        cursor: pointer;
+        margin-top: .5rem;
+        box-shadow: 0 4px 14px rgba(22,163,74,.35);
+        transition: opacity .2s, transform .2s;
+    }
+    .btn-submit:hover { opacity: .92; transform: translateY(-1px); }
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.25rem;
+        font-size: .875rem;
+        color: #64748b;
+    }
+    .auth-footer a { color: #16a34a; font-weight: 700; text-decoration: none; }
+    .auth-footer a:hover { text-decoration: underline; }
+</style>
+
+<div class="auth-wrap">
+    <div class="auth-card">
+
+        <div class="auth-logo">
+            <div class="icon">📖</div>
         </div>
+        <h1 class="auth-title">Daftar Akun</h1>
+        <p class="auth-sub">Buat akun siswa perpustakaan</p>
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        @if ($errors->any())
+            <div class="error-box">
+                <ul style="list-style: disc; padding-left: 1rem;">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <form method="POST" action="{{ route('register') }}">
+            @csrf
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
+            <div class="form-group">
+                <label class="form-label">Nama Lengkap</label>
+                <input type="text" name="name" value="{{ old('name') }}" required
+                    class="form-input" placeholder="Masukkan nama lengkap">
+            </div>
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" value="{{ old('email') }}" required
+                    class="form-input" placeholder="contoh@email.com">
+            </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" required
+                    class="form-input" placeholder="Minimal 8 karakter">
+            </div>
 
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
+            <div class="form-group">
+                <label class="form-label">Konfirmasi Password</label>
+                <input type="password" name="password_confirmation" required
+                    class="form-input" placeholder="Ulangi password">
+            </div>
 
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
+            <button type="submit" class="btn-submit">✨ Daftar Sekarang</button>
+        </form>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
-        </div>
-    </form>
+        <p class="auth-footer">
+            Sudah punya akun?
+            <a href="{{ route('login') }}">Masuk di sini</a>
+        </p>
+    </div>
+</div>
 </x-guest-layout>
