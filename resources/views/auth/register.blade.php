@@ -74,10 +74,33 @@
         color: #111827;
         outline: none;
         transition: border-color .2s, box-shadow .2s;
+        background: white;
     }
     .form-input:focus {
         border-color: #16a34a;
         box-shadow: 0 0 0 3px rgba(22,163,74,.15);
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .85rem;
+    }
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin: 1.25rem 0 1.1rem;
+        color: #94a3b8;
+        font-size: .8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .divider::before, .divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
     }
     .btn-submit {
         width: 100%;
@@ -126,6 +149,7 @@
         <form method="POST" action="{{ route('register') }}">
             @csrf
 
+            {{-- ── Data Akun ── --}}
             <div class="form-group">
                 <label class="form-label">Nama Lengkap</label>
                 <input type="text" name="name" value="{{ old('name') }}" required
@@ -148,6 +172,31 @@
                 <label class="form-label">Konfirmasi Password</label>
                 <input type="password" name="password_confirmation" required
                     class="form-input" placeholder="Ulangi password">
+            </div>
+
+            {{-- ── Data Siswa ── --}}
+            <div class="divider">Data Siswa</div>
+
+            <div class="form-group">
+                <label class="form-label">NISN</label>
+                <input type="text" name="nisn" value="{{ old('nisn') }}" required
+                    class="form-input" placeholder="Nomor Induk Siswa Nasional"
+                    maxlength="10" pattern="\d{10}"
+                    title="NISN harus terdiri dari 10 digit angka">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Kelas</label>
+                    <input type="text" name="kelas" value="{{ old('kelas') }}" required
+                        class="form-input" placeholder="Contoh: X, XI, XII">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Jurusan</label>
+                    <input type="text" name="jurusan" value="{{ old('jurusan') }}" required
+                        class="form-input" placeholder="Contoh: RPL, TKJ">
+                </div>
             </div>
 
             <button type="submit" class="btn-submit">✨ Daftar Sekarang</button>

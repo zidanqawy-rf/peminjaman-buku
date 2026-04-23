@@ -9,16 +9,18 @@ use Illuminate\Http\Request;
 
 class PeminjamanController extends Controller
 {
-    public function index(Request $request)
+    // ─────────────────────────────────────────────
+    //  Helper: query builder dengan filter yang sama
+    //  dipakai oleh index() dan exportPdf()
+    // ─────────────────────────────────────────────
+    private function buildQuery(Request $request)
     {
-        // PERBAIKAN: Gunakan withSum untuk menjumlahkan kolom 'jumlah' pada relasi detailBuku
-        // Ini memastikan jika 1 baris detail isinya 2 buku, maka akan terhitung 2, bukan 1.
         $query = Peminjaman::with(['user'])->withSum('detailBuku as total_buku', 'jumlah');
 
         // 1. Filter Nama Siswa (Search)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function($q) use ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%');
             });
         }
@@ -37,23 +39,49 @@ class PeminjamanController extends Controller
             $query->whereDate('tanggal_pinjam', '<=', $request->tgl_selesai);
         }
 
-        // Eksekusi pagination
-        $peminjaman = $query->latest()->paginate(15)->withQueryString();
+        return $query;
+    }
 
-        // Statistik Dashboard (Tetap dipertahankan)
+    // ─────────────────────────────────────────────
+    //  index — Daftar dengan pagination
+    // ─────────────────────────────────────────────
+    public function index(Request $request)
+    {
+        $peminjaman = $this->buildQuery($request)
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
         $totalPengajuan = Peminjaman::where('status', 'pengajuan')->count();
         $totalKembali   = Peminjaman::where('status', 'pengajuan_kembali')->count();
 
         return view('admin.peminjaman.index', compact('peminjaman', 'totalPengajuan', 'totalKembali'));
     }
 
+    // ─────────────────────────────────────────────
+    //  exportPdf — Render view cetak (semua data,
+    //              tanpa pagination, ikut filter)
+    // ─────────────────────────────────────────────
+    public function exportPdf(Request $request)
+    {
+        // Ambil SEMUA data sesuai filter (tanpa paginate)
+        $peminjaman = $this->buildQuery($request)->latest()->get();
+
+        return view('admin.peminjaman.print', compact('peminjaman'));
+    }
+
+    // ─────────────────────────────────────────────
+    //  show
+    // ─────────────────────────────────────────────
     public function show(Peminjaman $peminjaman)
     {
-        // Load relasi agar detail buku muncul di halaman show
         $peminjaman->load(['user', 'detailBuku.buku']);
         return view('admin.peminjaman.show', compact('peminjaman'));
     }
 
+    // ─────────────────────────────────────────────
+    //  setujui
+    // ─────────────────────────────────────────────
     public function setujui(Request $request, Peminjaman $peminjaman)
     {
         if ($peminjaman->status !== 'pengajuan') {
@@ -62,7 +90,6 @@ class PeminjamanController extends Controller
 
         $request->validate(['catatan_admin' => 'nullable|string|max:500']);
 
-        // Kurangi stok berdasarkan jumlah di detail
         foreach ($peminjaman->detailBuku as $detail) {
             $buku = $detail->buku;
             if ($buku->jumlah_buku < $detail->jumlah) {
@@ -79,6 +106,9 @@ class PeminjamanController extends Controller
         return back()->with('success', 'Peminjaman berhasil disetujui.');
     }
 
+    // ─────────────────────────────────────────────
+    //  tolak
+    // ─────────────────────────────────────────────
     public function tolak(Request $request, Peminjaman $peminjaman)
     {
         if ($peminjaman->status !== 'pengajuan') {
@@ -95,6 +125,9 @@ class PeminjamanController extends Controller
         return back()->with('success', 'Peminjaman ditolak.');
     }
 
+    // ─────────────────────────────────────────────
+    //  konfirmasiKembali
+    // ─────────────────────────────────────────────
     public function konfirmasiKembali(Request $request, Peminjaman $peminjaman)
     {
         if ($peminjaman->status !== 'pengajuan_kembali') {
@@ -106,7 +139,6 @@ class PeminjamanController extends Controller
             'catatan_admin' => 'nullable|string|max:500',
         ]);
 
-        // Kembalikan stok buku
         foreach ($peminjaman->detailBuku as $detail) {
             $detail->buku->increment('jumlah_buku', $detail->jumlah);
         }

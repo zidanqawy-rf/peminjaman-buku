@@ -24,13 +24,19 @@ class RegisteredUserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'nisn'     => ['required', 'digits:10', 'unique:users,nisn'],
+            'kelas'    => ['required', 'string', 'max:20'],   // ✅ bebas diketik
+            'jurusan'  => ['required', 'string', 'max:50'],   // ✅ bebas diketik
         ]);
 
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
-            'password' => $request->password, // ✅ cast 'hashed' di model yg hash otomatis
+            'password' => $request->password, // ✅ cast 'hashed' di model yang hash otomatis
             'role'     => 'user',
+            'nisn'     => $request->nisn,
+            'kelas'    => $request->kelas,
+            'jurusan'  => $request->jurusan,
         ]);
 
         event(new Registered($user));

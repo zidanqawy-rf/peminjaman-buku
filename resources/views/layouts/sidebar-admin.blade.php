@@ -61,6 +61,16 @@
             Kelola Kategori
         </a>
 
+        {{-- Master Denda --}}
+        <a href="{{ route('admin.denda.index') }}"
+           style="{{ request()->routeIs('admin.denda.*') ? $linkActive : $linkInactive }}"
+           class="nav-link">
+            <span style="{{ request()->routeIs('admin.denda.*') ? $spanActive : $spanInactive }}">
+                <svg style="width:18px;height:18px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+            Master Denda
+        </a>
+
         <p style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.2);padding:18px 14px 6px">Transaksi</p>
 
         {{-- Daftar Peminjaman dengan Badge --}}
@@ -78,16 +88,6 @@
                     {{ $countNotifTotal }}
                 </span>
             @endif
-        </a>
-
-        {{-- Master Denda --}}
-        <a href="{{ route('admin.denda.index') }}"
-           style="{{ request()->routeIs('admin.denda.*') ? $linkActive : $linkInactive }}"
-           class="nav-link">
-            <span style="{{ request()->routeIs('admin.denda.*') ? $spanActive : $spanInactive }}">
-                <svg style="width:18px;height:18px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </span>
-            Master Denda
         </a>
 
     </nav>

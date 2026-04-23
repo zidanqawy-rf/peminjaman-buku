@@ -88,7 +88,7 @@
                 <div style="display:flex;flex-direction:column;gap:10px">
                     @foreach($peminjaman->detailBuku as $d)
                     <div style="display:flex;align-items:center;gap:12px;background:#f8fafc;border-radius:12px;padding:12px">
-                        <div style="width:40px;height:52px;background:#e8f5e9;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <div style="width:40px;height:52px;background:#e8f5e9;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
                             @if($d->buku->gambar)
                             <img src="{{ Storage::url($d->buku->gambar) }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
                             @else
@@ -97,11 +97,22 @@
                             </svg>
                             @endif
                         </div>
-                        <div style="flex:1">
-                            <p style="font-size:13px;font-weight:700;color:#1e293b">{{ $d->buku->nama_buku }}</p>
-                            <p style="font-size:11px;color:#94a3b8;margin-top:2px">{{ $d->buku->kategori ?? '-' }}</p>
+                        <div style="flex:1;min-width:0">
+                            <p style="font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                {{ $d->buku->nama_buku }}
+                            </p>
+                            {{-- ✅ Tampilkan penulis, tahun terbit, penerbit --}}
+                            <p style="font-size:11px;color:#94a3b8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                {{ $d->buku->pengarang ?? '-' }}
+                                @if(!empty($d->buku->tahun_terbit))
+                                    &nbsp;·&nbsp;{{ $d->buku->tahun_terbit }}
+                                @endif
+                                @if(!empty($d->buku->penerbit))
+                                    &nbsp;·&nbsp;{{ $d->buku->penerbit }}
+                                @endif
+                            </p>
                         </div>
-                        <span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">
+                        <span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px;flex-shrink:0">
                             {{ $d->jumlah }} buku
                         </span>
                     </div>

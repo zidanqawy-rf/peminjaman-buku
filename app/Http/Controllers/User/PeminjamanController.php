@@ -37,12 +37,12 @@ class PeminjamanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tanggal_pinjam' => 'required|date|after_or_equal:today',
-            'tanggal_rencana_kembali' => 'required|date|after:tanggal_pinjam',
-            'catatan' => 'nullable|string|max:500',
+            'tanggal_pinjam'          => 'required|date|after_or_equal:today',
+            'tanggal_rencana_kembali' => 'required|date|after_or_equal:tanggal_pinjam', // ✅ boleh hari yang sama
+            'catatan'                 => 'nullable|string|max:500',
 
-            'buku' => 'required|array|min:1',
-            'buku.*.id' => 'required|exists:bukus,id',
+            'buku'          => 'required|array|min:1',
+            'buku.*.id'     => 'required|exists:bukus,id',
             'buku.*.jumlah' => 'required|integer|min:1',
         ]);
 
@@ -69,11 +69,11 @@ class PeminjamanController extends Controller
         */
 
         $peminjaman = Peminjaman::create([
-            'user_id' => Auth::id(),
-            'tanggal_pinjam' => $request->tanggal_pinjam,
+            'user_id'                 => Auth::id(),
+            'tanggal_pinjam'          => $request->tanggal_pinjam,
             'tanggal_rencana_kembali' => $request->tanggal_rencana_kembali,
-            'catatan' => $request->catatan,
-            'status' => 'pengajuan',
+            'catatan'                 => $request->catatan,
+            'status'                  => 'pengajuan',
         ]);
 
         /*
@@ -85,8 +85,8 @@ class PeminjamanController extends Controller
         foreach ($request->buku as $item) {
             PeminjamanBuku::create([
                 'peminjaman_id' => $peminjaman->id,
-                'buku_id' => $item['id'],
-                'jumlah' => $item['jumlah'],
+                'buku_id'       => $item['id'],
+                'jumlah'        => $item['jumlah'],
             ]);
         }
 
@@ -121,7 +121,6 @@ class PeminjamanController extends Controller
         }
 
         // 4. Eksekusi query dengan urutan terbaru dan pagination
-        // withQueryString() penting agar filter tetap aktif saat pindah halaman (pagination)
         $peminjaman = $query->latest()->paginate(10)->withQueryString();
 
         return view('user.peminjaman.index', compact('peminjaman'));
@@ -212,9 +211,9 @@ class PeminjamanController extends Controller
         }
 
         $request->validate([
-            'tanggal_kembali' => 'required|date|after_or_equal:today',
+            'tanggal_kembali'   => 'required|date|after_or_equal:today',
             'foto_pengembalian' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'foto_bukti_denda' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'foto_bukti_denda'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $tanggalKembali = Carbon::parse($request->tanggal_kembali);
@@ -248,12 +247,12 @@ class PeminjamanController extends Controller
         }
 
         $peminjaman->update([
-            'tanggal_kembali' => $tanggalKembali,
+            'tanggal_kembali'  => $tanggalKembali,
             'foto_pengembalian' => $fotoPengembalian,
             'foto_bukti_denda' => $fotoBuktiDenda,
-            'hari_terlambat' => $hariTerlambat,
-            'jumlah_denda' => $jumlahDenda,
-            'status' => 'pengajuan_kembali',
+            'hari_terlambat'   => $hariTerlambat,
+            'jumlah_denda'     => $jumlahDenda,
+            'status'           => 'pengajuan_kembali',
         ]);
 
         return redirect()

@@ -1,8 +1,6 @@
 @extends('layouts.app-admin')
 @section('content')
-@section('header') Kelola Buku @endsection
 
-@section('content')
 <style>
     .page-wrap { padding: 2rem 1.5rem; max-width: 1200px; margin: 0 auto; }
 
@@ -25,8 +23,12 @@
     .btn-blue:hover   { background:#2563eb; }
     .btn-sm { padding:.4rem .85rem; font-size:.78rem; }
 
-    /* Alert */
+    /* Alerts */
     .alert-success { background:#f0fdf4; border:1px solid #86efac; color:#166534; padding:.85rem 1rem; border-radius:.75rem; margin-bottom:1.25rem; font-size:.875rem; }
+    .alert-error   { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; padding:.85rem 1rem; border-radius:.75rem; margin-bottom:1.25rem; font-size:.875rem; }
+    .alert-warning { background:#fffbeb; border:1px solid #fcd34d; color:#92400e; padding:.85rem 1rem; border-radius:.75rem; margin-bottom:1.25rem; font-size:.875rem; }
+    .alert-warning ul { margin:.4rem 0 0 1.2rem; }
+    .alert-warning li { font-size:.82rem; margin-bottom:.2rem; }
 
     /* Grid buku */
     .book-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:1.25rem; }
@@ -89,8 +91,26 @@
 
 <div class="page-wrap">
 
+    {{-- Alert Sukses --}}
     @if(session('success'))
         <div class="alert-success">✅ {{ session('success') }}</div>
+    @endif
+
+    {{-- Alert Error file import --}}
+    @if($errors->has('file'))
+        <div class="alert-error">❌ {{ $errors->first('file') }}</div>
+    @endif
+
+    {{-- Alert Baris yang Dilewati Saat Import --}}
+    @if(session('import_errors'))
+        <div class="alert-warning">
+            ⚠️ Beberapa baris dilewati karena data tidak valid:
+            <ul>
+                @foreach(session('import_errors') as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     <div class="top-bar">
@@ -121,7 +141,10 @@
     @else
         <div class="book-grid" id="bookGrid">
             @foreach($bukus as $buku)
-            <div class="book-card" data-nama="{{ strtolower($buku->nama_buku) }}" data-pengarang="{{ strtolower($buku->pengarang) }}" data-kategori="{{ $buku->kategori?->nama_kategori }}">
+            <div class="book-card"
+                 data-nama="{{ strtolower($buku->nama_buku) }}"
+                 data-pengarang="{{ strtolower($buku->pengarang ?? '') }}"
+                 data-kategori="{{ $buku->kategori?->nama_kategori }}">
                 <div class="book-img">
                     @if($buku->gambar)
                         <img src="{{ Storage::url($buku->gambar) }}" alt="{{ $buku->nama_buku }}">
@@ -144,14 +167,15 @@
                             onclick="openEdit(
                                 {{ $buku->id }},
                                 '{{ addslashes($buku->nama_buku) }}',
-                                '{{ addslashes($buku->deskripsi) }}',
+                                '{{ addslashes($buku->deskripsi ?? '') }}',
                                 {{ $buku->jumlah_buku }},
-                                '{{ $buku->kategori_id }}',
-                                '{{ addslashes($buku->pengarang) }}',
-                                '{{ addslashes($buku->penerbit) }}',
-                                '{{ $buku->tahun_terbit }}'
+                                '{{ $buku->kategori_id ?? '' }}',
+                                '{{ addslashes($buku->pengarang ?? '') }}',
+                                '{{ addslashes($buku->penerbit ?? '') }}',
+                                '{{ $buku->tahun_terbit ?? '' }}'
                             )">✏️ Edit</button>
-                        <form method="POST" action="{{ route('admin.bukus.destroy', $buku) }}" onsubmit="return confirm('Hapus buku ini?')" style="flex:1">
+                        <form method="POST" action="{{ route('admin.bukus.destroy', $buku) }}"
+                              onsubmit="return confirm('Hapus buku ini?')" style="flex:1">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn btn-red btn-sm" style="width:100%">🗑️ Hapus</button>
                         </form>
@@ -163,7 +187,7 @@
     @endif
 </div>
 
-{{-- Modal Tambah --}}
+{{-- ═══════════════════ MODAL TAMBAH ═══════════════════ --}}
 <div class="modal-overlay" id="modalTambah">
     <div class="modal">
         <div class="modal-header">
@@ -175,36 +199,38 @@
             <div class="form-row">
                 <div class="form-group" style="grid-column:span 2">
                     <label class="form-label">Nama Buku *</label>
-                    <input type="text" name="nama_buku" class="form-input" required placeholder="Judul buku">
+                    <input type="text" name="nama_buku" class="form-input" required placeholder="Judul buku" value="{{ old('nama_buku') }}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Pengarang</label>
-                    <input type="text" name="pengarang" class="form-input" placeholder="Nama pengarang">
+                    <input type="text" name="pengarang" class="form-input" placeholder="Nama pengarang" value="{{ old('pengarang') }}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Penerbit</label>
-                    <input type="text" name="penerbit" class="form-input" placeholder="Nama penerbit">
+                    <input type="text" name="penerbit" class="form-input" placeholder="Nama penerbit" value="{{ old('penerbit') }}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Jumlah Buku *</label>
-                    <input type="number" name="jumlah_buku" class="form-input" required min="1" placeholder="0">
+                    <input type="number" name="jumlah_buku" class="form-input" required min="1" placeholder="0" value="{{ old('jumlah_buku') }}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tahun Terbit</label>
-                    <input type="number" name="tahun_terbit" class="form-input" placeholder="2024" min="1900" max="{{ date('Y') }}">
+                    <input type="number" name="tahun_terbit" class="form-input" placeholder="{{ date('Y') }}" min="1900" max="{{ date('Y') }}" value="{{ old('tahun_terbit') }}">
                 </div>
                 <div class="form-group" style="grid-column:span 2">
                     <label class="form-label">Kategori</label>
                     <select name="kategori_id" class="form-select">
                         <option value="">-- Pilih Kategori --</option>
                         @foreach($kategoris as $kat)
-                            <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
+                            <option value="{{ $kat->id }}" {{ old('kategori_id') == $kat->id ? 'selected' : '' }}>
+                                {{ $kat->nama_kategori }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="form-group" style="grid-column:span 2">
                     <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" class="form-textarea" placeholder="Deskripsi singkat buku..."></textarea>
+                    <textarea name="deskripsi" class="form-textarea" placeholder="Deskripsi singkat buku...">{{ old('deskripsi') }}</textarea>
                 </div>
                 <div class="form-group" style="grid-column:span 2">
                     <label class="form-label">Gambar Cover</label>
@@ -219,7 +245,7 @@
     </div>
 </div>
 
-{{-- Modal Edit --}}
+{{-- ═══════════════════ MODAL EDIT ═══════════════════ --}}
 <div class="modal-overlay" id="modalEdit">
     <div class="modal">
         <div class="modal-header">
@@ -263,7 +289,7 @@
                     <textarea name="deskripsi" id="edit_deskripsi" class="form-textarea"></textarea>
                 </div>
                 <div class="form-group" style="grid-column:span 2">
-                    <label class="form-label">Gambar Cover (kosongkan jika tidak diubah)</label>
+                    <label class="form-label">Gambar Cover <small style="color:#94a3b8">(kosongkan jika tidak diubah)</small></label>
                     <input type="file" name="gambar" class="form-input" accept="image/*">
                 </div>
             </div>
@@ -275,24 +301,41 @@
     </div>
 </div>
 
-{{-- Modal Import --}}
+{{-- ═══════════════════ MODAL IMPORT ═══════════════════ --}}
 <div class="modal-overlay" id="modalImport">
-    <div class="modal" style="max-width:440px">
+    <div class="modal" style="max-width:460px">
         <div class="modal-header">
             <span class="modal-title">📥 Import Data Buku</span>
             <button class="modal-close" onclick="closeModal('modalImport')">✕</button>
         </div>
+
+        {{-- Tampilkan error validasi file di dalam modal --}}
+        @if($errors->has('file'))
+        <div style="background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;padding:.75rem 1rem;border-radius:.65rem;margin-bottom:1rem;font-size:.82rem;">
+            ❌ {{ $errors->first('file') }}
+        </div>
+        @endif
+
         <form method="POST" action="{{ route('admin.bukus.import') }}" enctype="multipart/form-data">
             @csrf
             <div class="import-box">
                 <input type="file" name="file" class="form-input" accept=".xlsx,.xls,.csv" required>
-                <p>Format file: <strong>.xlsx / .xls / .csv</strong></p>
-                <p style="margin-top:.5rem">Kolom yang diperlukan: <strong>nama_buku, jumlah_buku</strong></p>
-                <p>Kolom opsional: deskripsi, kategori, pengarang, penerbit, tahun_terbit</p>
+                <p style="margin-top:.75rem">Format: <strong>.xlsx / .xls / .csv</strong> &nbsp;|&nbsp; Maks: <strong>5 MB</strong></p>
+                <p style="margin-top:.4rem">Kolom wajib: <strong>nama_buku, jumlah_buku</strong></p>
+                <p style="margin-top:.2rem">Kolom opsional: deskripsi, kategori, pengarang, penerbit, tahun_terbit</p>
             </div>
-            <a href="#" onclick="downloadTemplate()" style="display:block; font-size:.82rem; color:#16a34a; margin-bottom:1rem; text-decoration:underline;">
-                📄 Download template Excel
+
+            {{-- Contoh header Excel --}}
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.65rem;padding:.75rem 1rem;margin-bottom:1rem;font-size:.78rem;color:#166534;">
+                <strong>📋 Pastikan header Excel persis:</strong><br>
+                <code style="font-size:.75rem;letter-spacing:.5px">nama_buku | jumlah_buku | deskripsi | kategori | pengarang | penerbit | tahun_terbit</code>
+            </div>
+
+            <a href="#" onclick="downloadTemplate(); return false;"
+               style="display:block;font-size:.82rem;color:#16a34a;margin-bottom:1rem;text-decoration:underline;">
+                📄 Download template CSV
             </a>
+
             <div class="form-actions">
                 <button type="button" class="btn btn-gray" onclick="closeModal('modalImport')">Batal</button>
                 <button type="submit" class="btn btn-green">📤 Import</button>
@@ -311,7 +354,7 @@ function closeModal(id) {
     document.body.style.overflow = '';
 }
 
-// Tutup saat klik overlay
+// Tutup saat klik di luar modal
 document.querySelectorAll('.modal-overlay').forEach(el => {
     el.addEventListener('click', function(e) {
         if (e.target === this) closeModal(this.id);
@@ -320,43 +363,52 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 
 function openEdit(id, nama, deskripsi, jumlah, kategoriId, pengarang, penerbit, tahun) {
     document.getElementById('formEdit').action = '/admin/bukus/' + id;
-    document.getElementById('edit_nama_buku').value = nama;
-    document.getElementById('edit_deskripsi').value = deskripsi;
+    document.getElementById('edit_nama_buku').value    = nama;
+    document.getElementById('edit_deskripsi').value   = deskripsi;
     document.getElementById('edit_jumlah_buku').value = jumlah;
     document.getElementById('edit_kategori_id').value = kategoriId;
-    document.getElementById('edit_pengarang').value = pengarang;
-    document.getElementById('edit_penerbit').value = penerbit;
+    document.getElementById('edit_pengarang').value   = pengarang;
+    document.getElementById('edit_penerbit').value    = penerbit;
     document.getElementById('edit_tahun_terbit').value = tahun;
     openModal('modalEdit');
 }
 
 // Filter buku
 function filterBuku() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
+    const search  = document.getElementById('searchInput').value.toLowerCase();
     const kategori = document.getElementById('filterKategori').value.toLowerCase();
     document.querySelectorAll('.book-card').forEach(card => {
-        const nama = card.dataset.nama || '';
+        const nama      = card.dataset.nama      || '';
         const pengarang = card.dataset.pengarang || '';
-        const kat = (card.dataset.kategori || '').toLowerCase();
+        const kat       = (card.dataset.kategori || '').toLowerCase();
         const matchSearch = nama.includes(search) || pengarang.includes(search);
-        const matchKat = !kategori || kat === kategori;
+        const matchKat    = !kategori || kat === kategori;
         card.style.display = (matchSearch && matchKat) ? '' : 'none';
     });
 }
 
+// Download template CSV
 function downloadTemplate() {
-    // Buat CSV sederhana untuk template
-    const csv = 'nama_buku,jumlah_buku,deskripsi,kategori,pengarang,penerbit,tahun_terbit\nContoh Buku,5,Deskripsi buku,Fiksi,Nama Pengarang,Nama Penerbit,2024';
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'template_buku.csv';
+    const csv = [
+        'nama_buku,jumlah_buku,deskripsi,kategori,pengarang,penerbit,tahun_terbit',
+        'Laskar Pelangi,5,Novel inspiratif,Fiksi,Andrea Hirata,Bentang Pustaka,2005',
+        'Belajar Laravel,3,Panduan web development,Teknologi,Pak Budi,Elex Media,2023',
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'template_import_buku.csv';
     a.click();
+    URL.revokeObjectURL(url);
 }
 
-// Buka modal jika ada error validasi
-@if($errors->any())
+// Buka modal yang relevan jika ada error
+@if($errors->has('file'))
+    openModal('modalImport');
+@elseif($errors->any())
     openModal('modalTambah');
 @endif
 </script>
+
 @endsection
