@@ -9,6 +9,8 @@ class Buku extends Model
 {
     use HasFactory;
 
+    protected $table = 'bukus'; // ⚠️ pastikan sesuai database kamu (bukus / buku)
+
     protected $fillable = [
         'nama_buku',
         'deskripsi',
@@ -21,8 +23,16 @@ class Buku extends Model
         'tahun_terbit',
     ];
 
+    // ── RELASI ────────────────────────────────
     public function kategori()
     {
         return $this->belongsTo(Kategori::class);
+    }
+
+    public function peminjaman()
+    {
+        return $this->belongsToMany(Peminjaman::class, 'peminjaman_buku')
+            ->withPivot('jumlah')
+            ->withTimestamps();
     }
 }

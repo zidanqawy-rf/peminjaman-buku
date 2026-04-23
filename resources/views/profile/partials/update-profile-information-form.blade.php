@@ -1,63 +1,84 @@
 <section>
     <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Profile Information') }}
+        <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">
+            {{ __('Informasi Profil') }}
         </h2>
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __("Update your account's profile information and email address.") }}
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px; margin-bottom: 20px;">
+            {{ __("Perbarui informasi profil akun dan alamat email Anda.") }}
         </p>
     </header>
 
+    {{-- Form Verifikasi Email (Jika diperlukan) --}}
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" style="display: flex; flex-direction: column; gap: 16px;">
         @csrf
         @method('patch')
 
+        {{-- Nama --}}
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+            <label for="name" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-bottom: 7px;">
+                {{ __('Nama Lengkap') }}
+            </label>
+            <input id="name" name="name" type="text" 
+                value="{{ old('name', $user->name) }}" required autofocus autocomplete="name"
+                style="width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; font-size: 13.5px; color: #1e293b; background: #f8fafc; outline: none; box-sizing: border-box;"
+                onfocus="this.style.borderColor='#3b82f6'; this.style.background='#fff';"
+                onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+            @if($errors->get('name'))
+                <p style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ $errors->first('name') }}</p>
+            @endif
         </div>
 
+        {{-- Email --}}
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+            <label for="email" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-bottom: 7px;">
+                {{ __('Alamat Email') }}
+            </label>
+            <input id="email" name="email" type="email" 
+                value="{{ old('email', $user->email) }}" required autocomplete="username"
+                style="width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; font-size: 13.5px; color: #1e293b; background: #f8fafc; outline: none; box-sizing: border-box;"
+                onfocus="this.style.borderColor='#3b82f6'; this.style.background='#fff';"
+                onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+            @if($errors->get('email'))
+                <p style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ $errors->first('email') }}</p>
+            @endif
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button form="send-verification" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ __('Click here to re-send the verification email.') }}
+                <div style="margin-top: 8px;">
+                    <p style="font-size: 13px; color: #1e293b;">
+                        {{ __('Email Anda belum diverifikasi.') }}
+                        <button form="send-verification" style="background: none; border: none; color: #3b82f6; text-decoration: underline; cursor: pointer; font-size: 13px; padding: 0;">
+                            {{ __('Klik di sini untuk mengirim ulang email verifikasi.') }}
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600">
-                            {{ __('A new verification link has been sent to your email address.') }}
+                        <p style="margin-top: 8px; font-weight: 600; font-size: 12px; color: #15803d;">
+                            {{ __('Link verifikasi baru telah dikirim ke alamat email Anda.') }}
                         </p>
                     @endif
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+        {{-- Tombol Save & Status --}}
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+            <button type="submit" 
+                style="padding: 10px 24px; border-radius: 10px; border: none; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 2px 8px rgba(59, 130, 246, .3);"
+                onmouseover="this.style.transform='translateY(-1px)'" 
+                onmouseout="this.style.transform='none'">
+                {{ __('Simpan Perubahan') }}
+            </button>
 
             @if (session('status') === 'profile-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600"
-                >{{ __('Saved.') }}</p>
+                <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2000)"
+                   style="font-size: 13px; color: #64748b; margin: 0;">
+                    {{ __('Berhasil disimpan.') }}
+                </p>
             @endif
         </div>
     </form>

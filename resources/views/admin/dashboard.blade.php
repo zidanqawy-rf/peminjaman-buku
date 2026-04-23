@@ -91,7 +91,7 @@
                 Kelola User
             </a>
 
-            <a href="#"
+            <a href="{{ route('admin.peminjaman.index') }}"
                 style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 16px;border-radius:12px;color:#fff;font-size:13.5px;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 12px rgba(245,158,11,.3);transition:transform .15s"
                 onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
                 <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">

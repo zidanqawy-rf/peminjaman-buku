@@ -22,16 +22,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $role = auth()->user()->role;
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-        if ($role === 'admin') {
+        if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
-        // ✅ Redirect user biasa ke dashboard user
         return redirect()->intended(route('dashboard'));
     }
-
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
