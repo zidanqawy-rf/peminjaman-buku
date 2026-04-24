@@ -12,9 +12,6 @@ class Peminjaman extends Model
 
     protected $table = 'peminjaman';
 
-    /**
-     * Atribut yang dapat diisi secara massal.
-     */
     protected $fillable = [
         'user_id',
         'tanggal_pinjam',
@@ -29,18 +26,22 @@ class Peminjaman extends Model
         'hari_terlambat',
         'jumlah_denda',
         'denda_lunas',
+        // ── Kolom baru untuk denda kerusakan/kehilangan ──
+        'denda_kerusakan',
+        'catatan_kerusakan',
+        'foto_bukti_denda_kerusakan',
+        'denda_kerusakan_lunas',
     ];
 
-    /**
-     * Casting tipe data otomatis.
-     */
     protected $casts = [
-        'tanggal_pinjam' => 'date',
+        'tanggal_pinjam'          => 'date',
         'tanggal_rencana_kembali' => 'date',
-        'tanggal_kembali' => 'date',
-        'denda_lunas' => 'boolean',
-        'hari_terlambat' => 'integer',
-        'jumlah_denda' => 'integer',
+        'tanggal_kembali'         => 'date',
+        'denda_lunas'             => 'boolean',
+        'denda_kerusakan_lunas'   => 'boolean',
+        'hari_terlambat'          => 'integer',
+        'jumlah_denda'            => 'integer',
+        'denda_kerusakan'         => 'integer',
     ];
 
     /*
@@ -49,18 +50,11 @@ class Peminjaman extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Relasi ke model User (Peminjam).
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Relasi Many-to-Many ke model Buku.
-     * Mengakses tabel pivot 'peminjaman_buku' dan mengambil kolom 'jumlah'.
-     */
     public function buku()
     {
         return $this->belongsToMany(
@@ -73,13 +67,8 @@ class Peminjaman extends Model
         ->withTimestamps();
     }
 
-    /**
-     * Relasi Has-Many ke tabel pivot PeminjamanBuku (Detail).
-     * Digunakan untuk fungsi withSum() di controller agar perhitungan jumlah buku akurat.
-     */
     public function detailBuku()
     {
-        // Pastikan nama model pivot Anda adalah PeminjamanBuku
         return $this->hasMany(PeminjamanBuku::class, 'peminjaman_id');
     }
 
@@ -89,22 +78,16 @@ class Peminjaman extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Cek apakah peminjaman sudah melewati batas waktu.
-     */
     public function isLate(): bool
     {
         $tanggalRencana = Carbon::parse($this->tanggal_rencana_kembali);
-        $tanggalCheck = $this->tanggal_kembali 
-            ? Carbon::parse($this->tanggal_kembali) 
+        $tanggalCheck   = $this->tanggal_kembali
+            ? Carbon::parse($this->tanggal_kembali)
             : Carbon::today();
 
         return $tanggalCheck->gt($tanggalRencana);
     }
 
-    /**
-     * Menghitung selisih hari keterlambatan.
-     */
     public function hariTerlambat(): int
     {
         if (!is_null($this->hari_terlambat) && $this->hari_terlambat > 0) {
@@ -112,8 +95,8 @@ class Peminjaman extends Model
         }
 
         $tanggalRencana = Carbon::parse($this->tanggal_rencana_kembali);
-        $tanggalCheck = $this->tanggal_kembali 
-            ? Carbon::parse($this->tanggal_kembali) 
+        $tanggalCheck   = $this->tanggal_kembali
+            ? Carbon::parse($this->tanggal_kembali)
             : Carbon::today();
 
         if ($tanggalCheck->lte($tanggalRencana)) {
@@ -123,9 +106,6 @@ class Peminjaman extends Model
         return (int) $tanggalRencana->diffInDays($tanggalCheck);
     }
 
-    /**
-     * Menghitung total denda berdasarkan tarif denda per hari.
-     */
     public function hitungDenda(int $dendaPerHari): int
     {
         if (!is_null($this->jumlah_denda) && $this->jumlah_denda > 0) {
@@ -136,32 +116,36 @@ class Peminjaman extends Model
     }
 
     /**
-     * Mendapatkan label status dalam bahasa Indonesia yang lebih ramah.
+     * Total seluruh tagihan (denda keterlambatan + denda kerusakan/kehilangan).
      */
+    public function totalDenda(): int
+    {
+        return ((int) $this->jumlah_denda) + ((int) $this->denda_kerusakan);
+    }
+
     public function statusLabel(): string
     {
         return match ($this->status) {
-            'pengajuan' => 'Menunggu Persetujuan',
-            'disetujui' => 'Sedang Dipinjam',
-            'ditolak' => 'Ditolak',
+            'pengajuan'         => 'Menunggu Persetujuan',
+            'disetujui'         => 'Sedang Dipinjam',
+            'ditolak'           => 'Ditolak',
             'pengajuan_kembali' => 'Proses Pengembalian',
-            'dikembalikan' => 'Sudah Dikembalikan',
-            default => ucfirst($this->status),
+            'didenda'           => 'Ada Tagihan Denda',   // ← STATUS BARU
+            'dikembalikan'      => 'Sudah Dikembalikan',
+            default             => ucfirst($this->status),
         };
     }
 
-    /**
-     * Mendapatkan warna status untuk keperluan styling UI.
-     */
     public function statusColor(): string
     {
         return match ($this->status) {
-            'pengajuan' => 'yellow',
-            'disetujui' => 'blue',
-            'ditolak' => 'red',
+            'pengajuan'         => 'yellow',
+            'disetujui'         => 'blue',
+            'ditolak'           => 'red',
             'pengajuan_kembali' => 'purple',
-            'dikembalikan' => 'green',
-            default => 'gray',
+            'didenda'           => 'orange',              // ← STATUS BARU
+            'dikembalikan'      => 'green',
+            default             => 'gray',
         };
     }
 }

@@ -13,7 +13,6 @@ class DendaController extends Controller
     {
         $setting = DendaSetting::first();
 
-        // Jika belum ada, buat default
         if (!$setting) {
             $setting = DendaSetting::create([
                 'denda_per_hari' => 1000,
@@ -24,30 +23,77 @@ class DendaController extends Controller
             ]);
         }
 
-        // ✅ Diperbaiki: 'bukus' → 'buku' (sesuai nama relasi di model Peminjaman)
-        $dendaAktif = Peminjaman::with(['user', 'buku'])
-            ->where('hari_terlambat', '>', 0)
+        // ── Denda keterlambatan (pengajuan_kembali & dikembalikan) ──
+        $dendaTerlambat = Peminjaman::with(['user', 'buku'])
+            ->where('jumlah_denda', '>', 0)
             ->whereIn('status', ['pengajuan_kembali', 'dikembalikan'])
             ->latest()
             ->get();
 
-        // Statistik denda
-        $totalDendaTerkumpul = Peminjaman::where('status', 'dikembalikan')
+        // ── Denda kerusakan/kehilangan (didenda & dikembalikan) ─────
+        $dendaKerusakan = Peminjaman::with(['user', 'buku'])
+            ->where('denda_kerusakan', '>', 0)
+            ->whereIn('status', ['didenda', 'dikembalikan'])
+            ->latest()
+            ->get();
+
+        // ── Gabungan semua record yang punya denda (union by id) ────
+        $dendaAktif = Peminjaman::with(['user', 'buku'])
+            ->where(function ($q) {
+                $q->where('jumlah_denda', '>', 0)
+                  ->orWhere('denda_kerusakan', '>', 0);
+            })
+            ->whereIn('status', ['pengajuan_kembali', 'didenda', 'dikembalikan'])
+            ->latest()
+            ->get();
+
+        // ── Statistik ────────────────────────────────────────────────
+
+        // Denda terlambat sudah lunas
+        $totalDendaTerlambatLunas = Peminjaman::where('status', 'dikembalikan')
             ->where('jumlah_denda', '>', 0)
             ->sum('jumlah_denda');
 
-        $dendaBelumBayar = Peminjaman::where('status', 'pengajuan_kembali')
+        // Denda kerusakan sudah lunas
+        $totalDendaKerusakanLunas = Peminjaman::where('status', 'dikembalikan')
+            ->where('denda_kerusakan', '>', 0)
+            ->sum('denda_kerusakan');
+
+        // Grand total terkumpul
+        $totalDendaTerkumpul = $totalDendaTerlambatLunas + $totalDendaKerusakanLunas;
+
+        // Denda terlambat belum bayar
+        $dendaBelumBayarTerlambat = Peminjaman::where('status', 'pengajuan_kembali')
             ->where('jumlah_denda', '>', 0)
             ->sum('jumlah_denda');
 
-        $jumlahKasusDenda = Peminjaman::where('hari_terlambat', '>', 0)->count();
+        // Denda kerusakan belum bayar
+        $dendaBelumBayarKerusakan = Peminjaman::where('status', 'didenda')
+            ->where('denda_kerusakan', '>', 0)
+            ->sum('denda_kerusakan');
+
+        // Grand total belum bayar
+        $dendaBelumBayar = $dendaBelumBayarTerlambat + $dendaBelumBayarKerusakan;
+
+        // Jumlah kasus
+        $jumlahKasusTerlambat  = Peminjaman::where('jumlah_denda', '>', 0)->count();
+        $jumlahKasusKerusakan  = Peminjaman::where('denda_kerusakan', '>', 0)->count();
+        $jumlahKasusDenda      = $jumlahKasusTerlambat + $jumlahKasusKerusakan;
 
         return view('admin.denda.index', compact(
             'setting',
             'dendaAktif',
+            'dendaTerlambat',
+            'dendaKerusakan',
             'totalDendaTerkumpul',
+            'totalDendaTerlambatLunas',
+            'totalDendaKerusakanLunas',
             'dendaBelumBayar',
-            'jumlahKasusDenda'
+            'dendaBelumBayarTerlambat',
+            'dendaBelumBayarKerusakan',
+            'jumlahKasusDenda',
+            'jumlahKasusTerlambat',
+            'jumlahKasusKerusakan',
         ));
     }
 

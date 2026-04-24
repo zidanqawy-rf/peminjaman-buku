@@ -23,6 +23,7 @@
                 'disetujui'          => 'background:#dbeafe;color:#1e40af',
                 'ditolak'            => 'background:#fee2e2;color:#991b1b',
                 'pengajuan_kembali'  => 'background:#f3e8ff;color:#6b21a8',
+                'didenda'            => 'background:#fff7ed;color:#c2410c',
                 'dikembalikan'       => 'background:#dcfce7;color:#14532d',
             ];
             $ss = $statusStyles[$peminjaman->status] ?? 'background:#f1f5f9;color:#475569';
@@ -98,18 +99,11 @@
                             @endif
                         </div>
                         <div style="flex:1;min-width:0">
-                            <p style="font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                                {{ $d->buku->nama_buku }}
-                            </p>
-                            {{-- ✅ Tampilkan penulis, tahun terbit, penerbit --}}
+                            <p style="font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $d->buku->nama_buku }}</p>
                             <p style="font-size:11px;color:#94a3b8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                                 {{ $d->buku->pengarang ?? '-' }}
-                                @if(!empty($d->buku->tahun_terbit))
-                                    &nbsp;·&nbsp;{{ $d->buku->tahun_terbit }}
-                                @endif
-                                @if(!empty($d->buku->penerbit))
-                                    &nbsp;·&nbsp;{{ $d->buku->penerbit }}
-                                @endif
+                                @if(!empty($d->buku->tahun_terbit)) &nbsp;·&nbsp;{{ $d->buku->tahun_terbit }} @endif
+                                @if(!empty($d->buku->penerbit)) &nbsp;·&nbsp;{{ $d->buku->penerbit }} @endif
                             </p>
                         </div>
                         <span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px;flex-shrink:0">
@@ -138,6 +132,12 @@
                         <span style="font-size:13px;font-weight:600;color:#1e293b">{{ $peminjaman->tanggal_kembali->format('d M Y') }}</span>
                     </div>
                     @endif
+                    @if($peminjaman->kondisi_buku)
+                    <div style="display:flex;justify-content:space-between">
+                        <span style="font-size:13px;color:#94a3b8">Kondisi Buku</span>
+                        <span style="font-size:13px;font-weight:600;color:#1e293b">{{ $peminjaman->kondisi_buku }}</span>
+                    </div>
+                    @endif
                     @if($peminjaman->catatan)
                     <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:4px">
                         <p style="font-size:12px;color:#94a3b8;margin-bottom:4px">Catatan / Keperluan</p>
@@ -163,8 +163,6 @@
                     </div>
                     <p style="font-size:15px;font-weight:800;color:#1e293b">Validasi Pengajuan</p>
                 </div>
-
-                {{-- Setujui --}}
                 <form method="POST" action="{{ route('admin.peminjaman.setujui', $peminjaman) }}" style="margin-bottom:12px">
                     @csrf
                     <textarea name="catatan_admin" rows="2" placeholder="Catatan untuk siswa (opsional)..."
@@ -175,8 +173,6 @@
                         ✅ Setujui Peminjaman
                     </button>
                 </form>
-
-                {{-- Tolak --}}
                 <button onclick="document.getElementById('modalTolak').style.display='flex'"
                     style="width:100%;background:#fff;color:#ef4444;border:1.5px solid #fecaca;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">
                     ❌ Tolak Pengajuan
@@ -196,46 +192,133 @@
                     <p style="font-size:15px;font-weight:800;color:#1e293b">Konfirmasi Pengembalian</p>
                 </div>
 
-                {{-- Denda info --}}
                 @if($peminjaman->jumlah_denda > 0)
                 <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:14px">
                     <p style="font-size:13px;font-weight:700;color:#c2410c">
-                        💰 Denda: Rp {{ number_format($peminjaman->jumlah_denda,0,',','.') }}
-                        ({{ $peminjaman->hari_terlambat }} hari terlambat)
+                        💰 Denda Terlambat: Rp {{ number_format($peminjaman->jumlah_denda,0,',','.') }}
+                        ({{ $peminjaman->hari_terlambat }} hari)
                     </p>
                     @if($peminjaman->foto_bukti_denda)
-                    <p style="font-size:12px;color:#ea580c;margin-top:4px">Bukti bayar telah diupload siswa</p>
+                    <p style="font-size:12px;color:#ea580c;margin-top:4px">✅ Bukti bayar telah diupload siswa</p>
                     @else
                     <p style="font-size:12px;color:#f97316;margin-top:4px">⚠ Belum ada bukti pembayaran</p>
                     @endif
                 </div>
                 @endif
 
-                <form method="POST" action="{{ route('admin.peminjaman.konfirmasiKembali', $peminjaman) }}">
+                <form method="POST" action="{{ route('admin.peminjaman.konfirmasiKembali', $peminjaman) }}" id="formKonfirmasi">
                     @csrf
                     <div style="margin-bottom:12px">
                         <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:7px">Kondisi Buku *</label>
-                        <select name="kondisi_buku" required
+                        <select name="kondisi_buku" id="selectKondisi" required onchange="cekKondisiRusak(this.value)"
                             style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#475569;background:#f8fafc;outline:none;cursor:pointer"
                             onfocus="this.style.borderColor='#a855f7'" onblur="this.style.borderColor='#e2e8f0'">
                             <option value="">Pilih kondisi...</option>
-                            <option>Baik</option>
-                            <option>Cukup Baik</option>
-                            <option>Rusak Ringan</option>
-                            <option>Rusak Berat</option>
+                            <option value="Baik">Baik</option>
+                            <option value="Cukup Baik">Cukup Baik</option>
+                            <option value="Rusak Ringan">Rusak Ringan</option>
+                            <option value="Rusak Berat">⚠️ Rusak Berat</option>
+                            <option value="Hilang">❌ Hilang</option>
                         </select>
                     </div>
+
+                    {{-- Panel denda kerusakan — muncul saat Rusak Berat / Hilang --}}
+                    <div id="panelDendaKerusakan" style="display:none;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;margin-bottom:14px">
+                        <p style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:12px">
+                            🚨 Buku <span id="labelKondisi"></span> — Masukkan Tagihan Denda
+                        </p>
+                        <div style="margin-bottom:10px">
+                            <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:6px">Nominal Denda (Rp) *</label>
+                            <input type="number" name="denda_kerusakan" id="inputDendaKerusakan" min="1" placeholder="Contoh: 150000"
+                                style="width:100%;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e293b;background:#fff;outline:none;box-sizing:border-box"
+                                onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='#fed7aa'"
+                                oninput="updatePreviewDenda(this.value)">
+                            <p id="previewDendaFormat" style="font-size:12px;color:#ea580c;margin-top:5px;font-weight:600"></p>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:6px">Keterangan / Alasan Denda *</label>
+                            <textarea name="catatan_kerusakan" id="textareaKerusakan" rows="3"
+                                placeholder="Jelaskan kondisi kerusakan atau bukti kehilangan buku..."
+                                style="width:100%;border:1.5px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e293b;background:#fff;outline:none;resize:none;box-sizing:border-box"
+                                onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='#fed7aa'"></textarea>
+                        </div>
+                        <div style="margin-top:10px;padding:10px 12px;background:#fff;border-radius:8px;border:1px dashed #fed7aa">
+                            <p style="font-size:11px;color:#92400e;margin:0;">
+                                ℹ️ Siswa akan diminta untuk membayar denda ini dan mengupload bukti pembayaran sebelum peminjaman dinyatakan selesai.
+                            </p>
+                        </div>
+                    </div>
+
                     <div style="margin-bottom:14px">
                         <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:7px">Catatan Admin</label>
                         <textarea name="catatan_admin" rows="2" placeholder="Catatan tambahan (opsional)..."
                             style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;resize:none;box-sizing:border-box"
                             onfocus="this.style.borderColor='#a855f7'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
                     </div>
-                    <button type="submit"
+                    <button type="submit" id="btnKonfirmasi"
                         style="width:100%;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,.3)">
                         ✅ Konfirmasi Buku Kembali
                     </button>
                 </form>
+            </div>
+            @endif
+
+            {{-- ═══ PANEL: STATUS DIDENDA — Menunggu Pembayaran Siswa ═══ --}}
+            @if($peminjaman->status === 'didenda')
+            <div style="background:#fff;border-radius:16px;padding:24px;border:2px solid #f97316;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                    <div style="width:36px;height:36px;background:#fff7ed;border-radius:10px;display:flex;align-items:center;justify-content:center">
+                        <svg style="width:18px;height:18px;color:#f97316" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                    </div>
+                    <p style="font-size:15px;font-weight:800;color:#1e293b">Tagihan Denda Kerusakan</p>
+                </div>
+
+                {{-- Info kondisi & denda --}}
+                <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;margin-bottom:14px">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                        <span style="font-size:13px;color:#92400e">Kondisi Buku</span>
+                        <span style="font-size:13px;font-weight:700;color:#c2410c">{{ $peminjaman->kondisi_buku }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                        <span style="font-size:13px;color:#92400e">Denda Kerusakan</span>
+                        <span style="font-size:14px;font-weight:800;color:#c2410c">Rp {{ number_format($peminjaman->denda_kerusakan,0,',','.') }}</span>
+                    </div>
+                    @if($peminjaman->catatan_kerusakan)
+                    <div style="border-top:1px dashed #fed7aa;padding-top:8px;margin-top:4px">
+                        <p style="font-size:11px;color:#92400e;margin-bottom:3px">Keterangan:</p>
+                        <p style="font-size:13px;color:#7c2d12">{{ $peminjaman->catatan_kerusakan }}</p>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Status bukti bayar --}}
+                @if($peminjaman->foto_bukti_denda_kerusakan)
+                    {{-- Sudah upload — tampilkan tombol konfirmasi --}}
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                        <p style="font-size:13px;font-weight:700;color:#166534;margin-bottom:8px">✅ Siswa sudah upload bukti pembayaran</p>
+                        <img src="{{ Storage::url($peminjaman->foto_bukti_denda_kerusakan) }}" alt="Bukti Denda Kerusakan"
+                            style="width:100%;border-radius:8px;object-fit:cover;max-height:180px;cursor:pointer"
+                            onclick="bukaGambar('{{ Storage::url($peminjaman->foto_bukti_denda_kerusakan) }}')">
+                    </div>
+                    <form method="POST" action="{{ route('admin.peminjaman.konfirmasiDendaKerusakan', $peminjaman) }}">
+                        @csrf
+                        <textarea name="catatan_admin" rows="2" placeholder="Catatan tambahan (opsional)..."
+                            style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e293b;background:#f8fafc;outline:none;resize:none;margin-bottom:10px;box-sizing:border-box"></textarea>
+                        <button type="submit"
+                            style="width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(34,197,94,.3)">
+                            ✅ Konfirmasi Pembayaran — Selesaikan Peminjaman
+                        </button>
+                    </form>
+                @else
+                    {{-- Belum upload --}}
+                    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;text-align:center">
+                        <p style="font-size:28px;margin-bottom:6px">⏳</p>
+                        <p style="font-size:13px;font-weight:700;color:#dc2626">Menunggu Pembayaran Siswa</p>
+                        <p style="font-size:12px;color:#ef4444;margin-top:4px">Siswa belum mengupload bukti pembayaran denda.</p>
+                    </div>
+                @endif
             </div>
             @endif
 
@@ -249,10 +332,10 @@
             </div>
             @endif
 
-            {{-- ═══ FOTO BUKTI DENDA ═══ --}}
+            {{-- ═══ FOTO BUKTI DENDA KETERLAMBATAN ═══ --}}
             @if($peminjaman->foto_bukti_denda)
             <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid #fed7aa;box-shadow:0 1px 4px rgba(0,0,0,.04)">
-                <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:14px">💰 Bukti Pembayaran Denda</p>
+                <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:14px">💰 Bukti Pembayaran Denda Terlambat</p>
                 <div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:12px">
                     <p style="font-size:13px;font-weight:700;color:#c2410c">
                         Rp {{ number_format($peminjaman->jumlah_denda,0,',','.') }}
@@ -270,9 +353,12 @@
             <div style="background:#f0fdf4;border-radius:16px;padding:24px;border:1px solid #bbf7d0">
                 <div style="text-align:center">
                     <div style="font-size:48px;margin-bottom:10px">✅</div>
-                    <p style="font-size:15px;font-weight:800;color:#14532d">Buku Telah Dikembalikan</p>
+                    <p style="font-size:15px;font-weight:800;color:#14532d">Peminjaman Selesai</p>
                     @if($peminjaman->kondisi_buku)
                     <p style="font-size:13px;color:#166534;margin-top:6px">Kondisi: <strong>{{ $peminjaman->kondisi_buku }}</strong></p>
+                    @endif
+                    @if($peminjaman->denda_kerusakan > 0)
+                    <p style="font-size:13px;color:#166534;margin-top:4px">Denda kerusakan: <strong>Rp {{ number_format($peminjaman->denda_kerusakan,0,',','.') }}</strong> ✅ Lunas</p>
                     @endif
                     @if($peminjaman->catatan_admin)
                     <p style="font-size:13px;color:#166534;margin-top:4px">{{ $peminjaman->catatan_admin }}</p>
@@ -343,16 +429,52 @@
 </div>
 
 <style>
-    @keyframes slideUp {
-        from { opacity:0;transform:translateY(12px) scale(.98) }
-        to   { opacity:1;transform:translateY(0) scale(1) }
-    }
+@keyframes slideUp {
+    from { opacity:0;transform:translateY(12px) scale(.98) }
+    to   { opacity:1;transform:translateY(0) scale(1) }
+}
 </style>
 
 <script>
 function bukaGambar(url) {
     document.getElementById('lightboxImg').src = url;
     document.getElementById('lightbox').style.display = 'flex';
+}
+
+// ── Tampilkan/sembunyikan panel denda kerusakan ──
+function cekKondisiRusak(val) {
+    const panel = document.getElementById('panelDendaKerusakan');
+    const label = document.getElementById('labelKondisi');
+    const inputDenda = document.getElementById('inputDendaKerusakan');
+    const textarea = document.getElementById('textareaKerusakan');
+    const btn = document.getElementById('btnKonfirmasi');
+
+    const perluDenda = (val === 'Rusak Berat' || val === 'Hilang');
+
+    if (panel) panel.style.display = perluDenda ? 'block' : 'none';
+    if (label) label.textContent = val;
+    if (inputDenda) inputDenda.required = perluDenda;
+    if (textarea) textarea.required = perluDenda;
+
+    if (btn) {
+        if (perluDenda) {
+            btn.textContent = '🚨 Konfirmasi & Kirim Tagihan Denda';
+            btn.style.background = 'linear-gradient(135deg,#f97316,#ea580c)';
+            btn.style.boxShadow = '0 2px 8px rgba(249,115,22,.3)';
+        } else {
+            btn.textContent = '✅ Konfirmasi Buku Kembali';
+            btn.style.background = 'linear-gradient(135deg,#a855f7,#7c3aed)';
+            btn.style.boxShadow = '0 2px 8px rgba(168,85,247,.3)';
+        }
+    }
+}
+
+// ── Preview format rupiah saat mengetik nominal ──
+function updatePreviewDenda(val) {
+    const el = document.getElementById('previewDendaFormat');
+    if (!el) return;
+    const num = parseInt(val) || 0;
+    el.textContent = num > 0 ? '= Rp ' + num.toLocaleString('id-ID') : '';
 }
 </script>
 @endsection
