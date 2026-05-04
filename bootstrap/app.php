@@ -19,7 +19,15 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->registered(function ($app) {
-        // Paksa Laravel menggunakan folder /tmp untuk menyimpan cache & session di Vercel
+        // PERBAIKAN KRUSIAL: Memastikan folder storage ada di /tmp agar writable
         $app->useStoragePath('/tmp');
+        
+        // Memastikan folder session dan views tersedia di folder tmp
+        if (!is_dir('/tmp/framework/views')) {
+            mkdir('/tmp/framework/views', 0755, true);
+        }
+        if (!is_dir('/tmp/framework/sessions')) {
+            mkdir('/tmp/framework/sessions', 0755, true);
+        }
     })
     ->create();

@@ -1,30 +1,25 @@
 {
     "version": 2,
+    "framework": null,
     "functions": {
-        "api/index.php": { "runtime": "vercel-php@0.7.1" }
+        "api/index.php": { "runtime": "vercel-php@0.7.5" }
     },
     "routes": [
-        { "src": "/build/(.*)", "dest": "/public/build/$1" },
-        { "src": "/(css|js|images|favicon.ico)/(.*)", "dest": "/public/$1/$2" },
-        { "src": "/(.*)", "dest": "/api/index.php" }
+        {
+            "src": "/(css|js|images|favicon.ico|favicon.png)/(.*)",
+            "dest": "/public/$1/$2"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.php"
+        }
     ],
     "env": {
-        "APP_ENV": "production",
-        "APP_DEBUG": "false",
-        "APP_URL": "https://peminjaman-buku-zidan-qawys-projects.vercel.app",
-        "APP_KEY": "base64:7lq+wqHvdK77gvb5J19PeGEHPD+HnTVkdPYLWZeQxgY=",
         "APP_CONFIG_CACHE": "/tmp/config.php",
-        "APP_ROUTES_CACHE": "/tmp/routes.php",
-        "VIEW_COMPILED_PATH": "/tmp",
-        "CACHE_DRIVER": "array",
-        "LOG_CHANNEL": "stderr",
-        "SESSION_DRIVER": "cookie",
-        "DB_CONNECTION": "mysql",
-        "DB_HOST": "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-        "DB_PORT": "4000",
-        "DB_DATABASE": "test",
-        "DB_USERNAME": "2hPXRy3wPeyZSno.root",
-        "DB_PASSWORD": "DLde3UheOM1xhZP2",
-        "MYSQL_ATTR_SSL_CA": "/etc/ssl/certs/ca-certificates.crt"
+        "APP_EVENTS_CACHE": "/tmp/events.php",
+        "APP_PACKAGES_CACHE": "/tmp/packages.php",
+        "APP_SERVICES_CACHE": "/tmp/services.php",
+        "VIEW_COMPILED_PATH": "/tmp/framework/views",
+        "SESSION_DRIVER": "cookie"
     }
 }
