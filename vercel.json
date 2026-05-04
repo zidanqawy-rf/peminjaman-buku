@@ -21,8 +21,8 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
-        "APP_URL": "https://your-vercel-domain.vercel.app",
+        "APP_DEBUG": "false",
+        "APP_URL": "https://peminjaman-buku-zidan-qawys-projects.vercel.app",
         "APP_KEY": "base64:7lq+wqHvdK77gvb5J19PeGEHPD+HnTVkdPYLWZeQxgY=",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
@@ -34,10 +34,11 @@
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "cookie",
         "DB_CONNECTION": "mysql",
-        "DB_HOST": "sql309.infinityfree.com",
-        "DB_PORT": "3306",
-        "DB_DATABASE": "if0_41792378_peminjaman_buku",
-        "DB_USERNAME": "if0_41792378",
-        "DB_PASSWORD": "Mzidan20082023"
+        "DB_HOST": "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
+        "DB_PORT": "4000",
+        "DB_DATABASE": "test",
+        "DB_USERNAME": "2hPXRy3wPeyZSno.root",
+        "DB_PASSWORD": "DLde3UheOM1xhZP2",
+        "MYSQL_ATTR_SSL_CA": "/etc/ssl/certs/ca-certificates.crt"
     }
 }
